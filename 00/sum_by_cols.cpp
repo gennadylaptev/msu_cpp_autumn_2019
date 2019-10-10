@@ -42,7 +42,12 @@ int main() {
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < size; j++)
             sum += a[j][i];
-    } 
+    }
+	
+	// don't forget to free all allocated memory
+	for (int i = 0; i < size; i++)
+		delete [] a[i];
+	delete [] a;
     
     return 0;
 }

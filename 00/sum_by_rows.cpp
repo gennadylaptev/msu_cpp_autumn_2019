@@ -37,14 +37,18 @@ int main() {
             a[j][k] = rand() % 10000;
     }
     
-	// We use volatile here to prevent the compiler from "remembering"
-	// the sum value    
+	// We use volatile here to prevent the compiler from "remembering" the sum value  
     volatile int sum = 0;
 	Timer timer;
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < size; j++)
             sum += a[i][j];
-    } 
+    }
+ 
+	// don't forget to free all allocated memory
+	for (int i = 0; i < size; i++)
+		delete [] a[i];
+	delete [] a;    
     
-    return 0;
+	return 0;
 }
