@@ -39,7 +39,7 @@ int main() {
     
 	// We use volatile here to prevent the compiler from "remembering"
 	// the sum value    
-    int sum = 0;
+    volatile int sum = 0;
 	Timer timer;
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < size; j++)
