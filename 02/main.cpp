@@ -3,7 +3,7 @@
 #include <string>
 
 std::string yes (" passed!\n");
-std::string no (" passed!\n");
+std::string no (" not passed!\n");
 
 void test_1 () {
     std::string name ("Allocation 1");
