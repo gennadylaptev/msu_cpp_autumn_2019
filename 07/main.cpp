@@ -5,12 +5,38 @@
 std::string yes (" passed!\n");
 std::string no (" not passed!\n");
 
+
 struct Custom_int {
     int value;
     // set default value to smth != 0
-    Custom_int (int x = 9) : value (x) {}
+    Custom_int (int x = 9) : value(x) {}
+};
+
+struct Custom_int_print {
+
+    std::stringstream stream;
+    int value;
+    
+    Custom_int_print (int x = 9) : value (x) {}
+    
+    Custom_int_print (const Custom_int_print& other) {
+        stream << "copying";
+        value = other.value;
+    }
+    
+    Custom_int_print (Custom_int_print&& other) {
+        stream << "moving";
+        value = other.value;
+        other.value = 0;
+    }
+    
+    ~Custom_int_print () {
+        stream.str("");
+        stream.clear();
+    }
     
 };
+
 
 std::ostream& operator<< (std::ostream& out, const Custom_int& x) {
     out << x.value;
@@ -131,17 +157,6 @@ void test_reserve_2 () {
         std::cout << name << yes;
     else
         std::cout << name << no;    
-}
-
-void test_pushback_rvalue () {
-    std::string name ("Push_back rvalue");
-    MyVector<std::string> b(3);
-    b.push_back("test");
-    
-    if (b[0] == "test")
-        std::cout << name << yes;
-    else
-        std::cout << name << no;   
 }
 
 void test_pop_back () {
@@ -276,8 +291,80 @@ void test_resize_5 () {
         std::cout << name << no;    
 }
 
+void test_pushback_lvalue () {
+    std::string name ("Push_back lvalue");
+    MyVector<Custom_int_print> b(1);
+    Custom_int_print x = Custom_int_print(7);
+    b.push_back(x);
+    if (b[0].stream.str() == "copying")
+        std::cout << name << yes;
+    else
+        std::cout << name << no;
+}
+
+void test_pushback_rvalue () {
+    std::string name ("Push_back rvalue");
+    MyVector<Custom_int_print> b(1);
+    b.push_back(Custom_int_print(7));
+    
+    if (b[0].stream.str() == "moving")
+        std::cout << name << yes;
+    else
+        std::cout << name << no;
+}
+
+void test_iterator_1 () {
+    std::string name ("Iterator_1");
+    MyVector<int> b(3);
+    b.push_back(0);
+    b.push_back(1);
+    b.push_back(2);
+    b.push_back(3);
+    b.push_back(4);
+
+    auto it = b.begin();
+    auto it2 = 2 + it;
+
+    if (*it2 == 2)
+        std::cout << name << yes;
+    else
+        std::cout << name << no;
+}
+
+void test_iterator_2 () {
+    std::string name ("Iterator_2");
+    MyVector<int> b(3);
+    b.push_back(0);
+    b.push_back(1);
+    b.push_back(2);
+    b.push_back(3);
+    b.push_back(4);
+
+    auto it = b.begin();
+    auto it2 = it + 2;
+
+    if (*it2 == 2)
+        std::cout << name << yes;
+    else
+        std::cout << name << no;
+}
+
+void test_init_list () {
+    std::string name ("Init list");
+    std::stringstream s;
+    MyVector<int> b = {1,2,3,4,5,6};
+    
+    for (const auto& x : b)
+        s << x;    
+    
+    if (s.str() == "123456")
+        std::cout << name << yes;
+    else
+        std::cout << name << no;
+}
 
 int main() {
+    
     
     test_iterator ();
     test_reversed ();
@@ -285,13 +372,20 @@ int main() {
     test_assign ();
     test_reserve_1 ();
     test_reserve_2 ();
-    test_pushback_rvalue ();
+    
     test_pop_back ();
     test_resize_1 ();
     test_resize_2 ();
     test_resize_3 ();
     test_resize_4 ();
     test_resize_5 ();
+    
+    test_pushback_lvalue ();
+    test_pushback_rvalue ();
+    
+    test_iterator_1 ();
+    
+    test_init_list();
    
     
     return 0;

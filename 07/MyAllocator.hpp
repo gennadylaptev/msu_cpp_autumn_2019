@@ -59,4 +59,3 @@ template <class T>
 void MyAllocator<T>::destroy (pointer p) {
     static_cast<T*>(p)->~T();
 }
-

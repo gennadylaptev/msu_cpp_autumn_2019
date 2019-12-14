@@ -7,4 +7,4 @@ run: compile
 test: compile
 	./main
 clean:
-	rm -rf main
+	rm -rf main *~
