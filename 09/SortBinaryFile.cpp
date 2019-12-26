@@ -285,7 +285,7 @@ void SortBinaryFile::merge_sorted () {
     t1.join();
     t2.join();
 
-    // if there are any exceptions - throw exception
+    // if there are any exceptions - rethrow exception
     // we'll catch it in `sort` method
     if (!exception_queue.empty()) {
         std::rethrow_exception(last_exception());
@@ -344,25 +344,16 @@ void SortBinaryFile::remove_with_msg (const std::string& filename) {
 void SortBinaryFile::clear_data () {
     // called only in emergency situation
     std::string filename;
-
-    {
-        std::lock_guard <std::mutex> lock(chunks_mutex);
-        std::string filename;
-        while (!chunks_queue.empty()) {
-            filename = chunks_queue.front();
-            remove_with_msg(filename);
-            chunks_queue.pop();
-        }
+    while (!chunks_queue.empty()) {
+        filename = chunks_queue.front();
+        remove_with_msg(filename);
+        chunks_queue.pop();
     }
 
-    {
-        std::lock_guard <std::mutex> lock(sorted_mutex);
-        std::string filename;
-        while (!sorted_queue.empty()) {
-            filename = sorted_queue.front();
-            remove_with_msg(filename);
-            sorted_queue.pop();
-        }
+    while (!sorted_queue.empty()) {
+        filename = sorted_queue.front();
+        remove_with_msg(filename);
+        sorted_queue.pop();
     }
 }
 
