@@ -304,7 +304,13 @@ void SortBinaryFile::rename_result () {
 
 void SortBinaryFile::sort() {
 
-    create_chunks();
+    try {
+        create_chunks();
+    }
+    catch  (std::runtime_error& no_input) {
+        std::cout << no_input.what() << " Terminate\n";
+        return;
+    }
 
     try {
         sort_chunks();
