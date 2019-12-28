@@ -27,8 +27,8 @@ int get_num (std::stringstream& s) {
     }
     else if (symb == '-') {
         s >> num;
-        num = -num;
-        //num = -get_num (s);
+        // to correctly handle "-" case
+        num = -get_num(s);
     }
     else
         throw std::runtime_error("Wrong format!");
@@ -50,7 +50,6 @@ void get_op (std::stringstream& s, op_val& curr_op) {
 
         if (!s.get(symb)) {
             curr_op = END;
-            std::cout << std::string(1, symb) << "\n";
             return;
         }
     }
@@ -106,18 +105,26 @@ int sum (std::stringstream& s, op_val& curr_op) {
 
 }
 
-int main (int argc, char * argv[]) {
-
-    if (argc != 2) {
+int compute(int argc, char * argv[]) {
+   if (argc != 2) {
         throw std::runtime_error("Invalid number of arguments!");
-        return 1;
     }
+    op_val curr_op;
     std::stringstream s(argv[1]);
-    op_val curr_op; // store current operation
-
     int res = sum(s, curr_op);
 
-    std::cout << res << "\n";
+    return res;
+}
+
+int main (int argc, char * argv[]) {
+
+    try {
+        int res = compute(argc, argv);
+        std::cout << res << "\n";
+    }
+    catch (std::runtime_error& e) {
+        std::cout << e.what() << " Failed to obtain the result." << "\n";
+    }
 
     return 0;
 }
