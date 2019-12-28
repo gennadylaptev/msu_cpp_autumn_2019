@@ -26,7 +26,6 @@ int get_num (std::stringstream& s) {
         s >> num; // get the num until the next whitespace
     }
     else if (symb == '-') {
-        s >> num;
         // to correctly handle "-" case
         num = -get_num(s);
     }

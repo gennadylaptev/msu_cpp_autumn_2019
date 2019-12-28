@@ -17,7 +17,7 @@ wrong_format_msg = "Wrong format! Failed to obtain the result."
 
 test("2 + 2", "4")
 test("4", "4")
-test("-100", "-100")
+test(, "-100")
 test("1 - 2 - 3 * 4 * 5 - -6 + -7", "-62")
 test("1 - 2 - 3 * 4 * 5 - -6 + -7 * 2 * 30", "-475")
 test("100 / -100 + -100*-100*-100", "-1000001")
