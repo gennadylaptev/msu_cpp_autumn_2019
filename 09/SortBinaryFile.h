@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <exception>
 #include <iostream>
+#include <atomic>
 
 class SortBinaryFile {
 
@@ -30,7 +31,7 @@ private:
     void clear_data ();
     void remove_with_msg (const std::string&);
 
-    std::exception_ptr last_exception();
+    void store_exception (const std::string& msg);
 
     // fields
     const size_t typesize = sizeof(uint64_t);
@@ -48,6 +49,8 @@ private:
     size_t part_number;
     std::queue<std::string> chunks_queue;
     std::queue<std::string> sorted_queue;
+
     // to communicate to other threads that something bad happened
-    std::queue<std::exception_ptr> exception_queue;
+    std::atomic_bool exceptionFlag;
+    std::exception_ptr exceptionPtr;
 };

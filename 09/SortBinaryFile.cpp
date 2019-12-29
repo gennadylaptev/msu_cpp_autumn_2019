@@ -4,7 +4,8 @@ SortBinaryFile::SortBinaryFile(const std::string &input_file,
                                const std::string &sorted_file) :
         input_file(input_file),
         sorted_file(sorted_file),
-        part_number(0) {}
+        part_number(0),
+        exceptionFlag(false) {}
 
 void SortBinaryFile::create_chunks () {
     // load input file by chunks and save chunks onto disk
@@ -61,12 +62,8 @@ void SortBinaryFile::sort_chunks_thread () {
     while (true) {
 
         // check if something bad happened in other thread(s)
-        {
-            std::lock_guard <std::mutex> lock(exception_mutex);
-            if (!exception_queue.empty()) {
-                return;
-            }
-        }
+        if (exceptionFlag)
+            return;
 
         // set lock to the chunks_queue
         {
@@ -76,28 +73,24 @@ void SortBinaryFile::sort_chunks_thread () {
                 chunks_queue.pop();
             }
             else
-                break;
+                return;
         }
 
         // load chunk to an array
         std::ifstream chunk_stream (chunk_name, std::ios::binary);
 
-        // if chunkfile is not open, add exception to exception_queue
+        // if chunk file doesn't open, store the exception in exceptionPtr, abort
         if (!chunk_stream) {
-            try {
-                throw std::runtime_error("No chunk file " + chunk_name + "!");
-            }
-            catch (std::runtime_error& e)
-            {
-                // catch the exception and then push to it the exception_queue
-                {
-                    std::lock_guard <std::mutex> lock(exception_mutex);
-                    exception_queue.emplace(std::current_exception());
-                }
+            if (exceptionFlag) // check if we already caught an exception in another thread
+                return;
+            else {
+                std::string msg("No chunk file " + chunk_name + "!");
+                store_exception(msg);
                 return;
             }
         }
 
+        // read into buffer
         uint64_t * buffer = new uint64_t[block_size];
         size_t i = 0;
         bool stop = !(chunk_stream.read(reinterpret_cast<char *>(&buffer[i]), typesize));
@@ -116,21 +109,19 @@ void SortBinaryFile::sort_chunks_thread () {
 
         // write into file
         std::ofstream sorted_stream (chunk_name, std::ios::binary);
+
+        // if fail to open output file store exception, abort
         if (!sorted_stream) {
-            try {
-                throw std::runtime_error("Cannot write sorted chunkfile " + chunk_name + "!\n");
-            }
-            catch (std::runtime_error& e)
-            {
-                // catch the exception and then push to it the exception_queue
-                {
-                    std::lock_guard <std::mutex> lock(exception_mutex);
-                    exception_queue.emplace(std::current_exception());
-                }
+            if (exceptionFlag) // check if we already caught an exception in another thread
+                return;
+            else {
+                std::string msg("Cannot write sorted chunkfile " + chunk_name + "!");
+                store_exception(msg);
                 return;
             }
         }
 
+        // write into file sorted chunk
         for (size_t j = 0; j < i; ++j) {
             sorted_stream.write(reinterpret_cast<char *>(& buffer[j]), typesize);
         }
@@ -152,8 +143,8 @@ void SortBinaryFile::sort_chunks () {
     t1.join();
     t2.join();
 
-    if (!exception_queue.empty()) {
-        std::rethrow_exception(last_exception());
+    if (exceptionFlag) {
+        std::rethrow_exception(exceptionPtr);
     }
 }
 
@@ -185,6 +176,7 @@ void SortBinaryFile::merge_two_arrays (
             out.close();
             remove_with_msg(outname);
         }
+        // we will catch it in `merge_sorted_thread`
         throw std::runtime_error("Merge error: no input and output files!");
     }
 
@@ -229,12 +221,8 @@ void SortBinaryFile::merge_sorted_thread () {
     while (true) {
 
         // check if something bad happened in other thread(s)
-        {
-            std::lock_guard <std::mutex> lock(exception_mutex);
-            if (!exception_queue.empty()) {
-                return;
-            }
-        }
+        if (exceptionFlag)
+            return;
 
         {
             // set lock on sorted_queue
@@ -258,15 +246,19 @@ void SortBinaryFile::merge_sorted_thread () {
         outname = "part_" + std::to_string(file_num) + ".bin";
 
         // if intermediate files are corrupt, merge_two_arrays will throw a runtime error
+        if (exceptionFlag)
+            return;
+
         try {
             merge_two_arrays(name1, name2, outname);
         }
         catch (std::runtime_error& no_merge_files_error)
         {
-            // catch the exception and then push to it the exception_queue
+            // catch the exception and then store into exceptionPtr
+            exceptionFlag = true;
             {
                 std::lock_guard <std::mutex> lock(exception_mutex);
-                exception_queue.emplace(std::current_exception());
+                exceptionPtr = std::current_exception();
             }
             return;
         }
@@ -287,8 +279,8 @@ void SortBinaryFile::merge_sorted () {
 
     // if there are any exceptions - rethrow exception
     // we'll catch it in `sort` method
-    if (!exception_queue.empty()) {
-        std::rethrow_exception(last_exception());
+    if (exceptionFlag) {
+        std::rethrow_exception(exceptionPtr);
     }
 }
 
@@ -363,13 +355,11 @@ void SortBinaryFile::clear_data () {
     }
 }
 
-std::exception_ptr SortBinaryFile::last_exception() {
-    std::lock_guard <std::mutex> lock(exception_mutex);
-    std::exception_ptr ep;
-    if (!exception_queue.empty()) {
-        ep = exception_queue.front();
-        exception_queue.pop();
+void SortBinaryFile::store_exception (const std::string& msg) {
+    exceptionFlag = true;
+    {
+        std::lock_guard <std::mutex> lock(exception_mutex);
+        exceptionPtr = std::make_exception_ptr(std::runtime_error(msg));
     }
 
-    return ep;
 }

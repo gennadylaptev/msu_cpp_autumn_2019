@@ -17,7 +17,8 @@ check:
 	valgrind --leak-check=full -v  ./main
 report:
 	/usr/bin/time -v ./main
-crash_test:
-	python3 crash_test.py
 clean_bin_files:
 	rm -rf *~ *.bin
+crash_test: clean_bin_files
+	python3 crash_test.py
+
