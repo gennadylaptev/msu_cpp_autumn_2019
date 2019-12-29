@@ -290,7 +290,7 @@ void SortBinaryFile::rename_result () {
         std::rename(result_name.c_str(), sorted_file.c_str());
     }
     else {
-        throw std::logic_error("Empty queue! No result file!");
+        throw std::runtime_error("Empty queue! No result file!");
     }
 }
 
