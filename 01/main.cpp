@@ -104,21 +104,29 @@ int sum (std::stringstream& s, op_val& curr_op) {
 
 }
 
-int compute(int argc, char * argv[]) {
+void process_args_for_compute(int argc, char * argv[], std::stringstream& s) {
+   // check the number of arguments, return a stringstream if everything is okay
    if (argc != 2) {
         throw std::runtime_error("Invalid number of arguments!");
     }
-    op_val curr_op;
-    std::stringstream s(argv[1]);
-    int res = sum(s, curr_op);
+   s = std::stringstream(argv[1]);
+   return;
+}
 
+int compute(std::stringstream& s) {
+    // evaluate an expression in a stringstream
+    op_val curr_op;
+    int res = sum(s, curr_op);
     return res;
 }
 
 int main (int argc, char * argv[]) {
 
     try {
-        int res = compute(argc, argv);
+        std::stringstream s;
+        process_args_for_compute (argc, argv, s);
+
+        int res = compute(s);
         std::cout << res << "\n";
     }
     catch (std::runtime_error& e) {
